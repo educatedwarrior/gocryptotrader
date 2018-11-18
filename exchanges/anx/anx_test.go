@@ -1,6 +1,7 @@
 package anx
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/thrasher-/gocryptotrader/config"
@@ -218,5 +219,20 @@ func TestFormatWithdrawPermissions(t *testing.T) {
 	// Assert
 	if withdrawPermissions != expectedResult {
 		t.Errorf("Expected: %s, Recieved: %s", expectedResult, withdrawPermissions)
+	}
+}
+
+func TestCancelExchangeOrder(t *testing.T) {
+	a.SetDefaults()
+	TestSetup(t)
+	a.APIKey = ""
+	a.APISecret = ""
+	a.AuthenticatedAPISupport = true
+	a.Verbose = true
+	butts, errrr := a.GetDataToken()
+	fmt.Sprintf("%v %v", butts, errrr)
+	err := a.CancelExchangeOrder("TEST")
+	if err != nil {
+		t.Error("Could not cancel order:", err)
 	}
 }

@@ -207,8 +207,10 @@ func (a *ANX) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder) (i
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (a *ANX) CancelExchangeOrder(orderID int64) error {
-	return errors.New("not yet implemented")
+func (a *ANX) CancelExchangeOrder(orderID string) error {
+	orderIDs := []string{orderID}
+
+	return a.CancelOrderByIDs(orderIDs)
 }
 
 // CancelAllExchangeOrders cancels all orders associated with a currency pair
