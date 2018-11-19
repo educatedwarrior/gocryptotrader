@@ -118,7 +118,7 @@ func (a *Alphapoint) ModifyExchangeOrder(orderID int64, action exchange.ModifyOr
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (a *Alphapoint) CancelExchangeOrder(orderID int64) error {
+func (a *Alphapoint) CancelExchangeOrder(orderID string) error {
 	//return a.CancelOrder(p.Pair().String(), orderID)
 	return errors.New("not yet implemented")
 }

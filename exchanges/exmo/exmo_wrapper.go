@@ -187,7 +187,7 @@ func (e *EXMO) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder) (
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (e *EXMO) CancelExchangeOrder(orderID int64) error {
+func (e *EXMO) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

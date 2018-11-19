@@ -155,7 +155,7 @@ func (b *Bitmex) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder)
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (b *Bitmex) CancelExchangeOrder(orderID int64) error {
+func (b *Bitmex) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

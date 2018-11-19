@@ -147,7 +147,7 @@ func (z *ZB) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder) (in
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (z *ZB) CancelExchangeOrder(orderID int64) error {
+func (z *ZB) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

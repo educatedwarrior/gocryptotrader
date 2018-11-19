@@ -150,7 +150,7 @@ func (l *LakeBTC) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (l *LakeBTC) CancelExchangeOrder(orderID int64) error {
+func (l *LakeBTC) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

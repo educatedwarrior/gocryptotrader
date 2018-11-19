@@ -146,7 +146,7 @@ func (h *HUOBIHADAX) ModifyExchangeOrder(orderID int64, action exchange.ModifyOr
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (h *HUOBIHADAX) CancelExchangeOrder(orderID int64) error {
+func (h *HUOBIHADAX) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

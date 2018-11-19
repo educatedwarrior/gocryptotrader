@@ -169,7 +169,7 @@ func (w *WEX) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder) (i
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (w *WEX) CancelExchangeOrder(orderID int64) error {
+func (w *WEX) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

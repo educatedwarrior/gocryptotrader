@@ -176,7 +176,7 @@ func (b *Bitstamp) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrde
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (b *Bitstamp) CancelExchangeOrder(orderID int64) error {
+func (b *Bitstamp) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

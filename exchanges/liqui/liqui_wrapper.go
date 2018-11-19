@@ -159,7 +159,7 @@ func (l *Liqui) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder) 
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (l *Liqui) CancelExchangeOrder(orderID int64) error {
+func (l *Liqui) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

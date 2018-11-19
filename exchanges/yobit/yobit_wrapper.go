@@ -151,7 +151,7 @@ func (y *Yobit) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder) 
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (y *Yobit) CancelExchangeOrder(orderID int64) error {
+func (y *Yobit) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

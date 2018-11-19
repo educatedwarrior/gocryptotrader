@@ -131,7 +131,7 @@ func (l *LocalBitcoins) ModifyExchangeOrder(orderID int64, action exchange.Modif
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (l *LocalBitcoins) CancelExchangeOrder(orderID int64) error {
+func (l *LocalBitcoins) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

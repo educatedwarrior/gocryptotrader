@@ -197,7 +197,7 @@ func (o *OKCoin) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder)
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (o *OKCoin) CancelExchangeOrder(orderID int64) error {
+func (o *OKCoin) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

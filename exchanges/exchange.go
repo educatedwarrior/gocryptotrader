@@ -155,7 +155,7 @@ type TradeHistory struct {
 // OrderDetail holds order detail data
 type OrderDetail struct {
 	Exchange      string
-	ID            int64
+	ID            string
 	BaseCurrency  string
 	QuoteCurrency string
 	OrderSide     string

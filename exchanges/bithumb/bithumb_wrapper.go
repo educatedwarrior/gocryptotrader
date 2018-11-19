@@ -151,7 +151,7 @@ func (b *Bithumb) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (b *Bithumb) CancelExchangeOrder(orderID int64) error {
+func (b *Bithumb) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 

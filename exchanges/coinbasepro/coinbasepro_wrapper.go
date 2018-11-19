@@ -155,7 +155,7 @@ func (c *CoinbasePro) ModifyExchangeOrder(orderID int64, action exchange.ModifyO
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (c *CoinbasePro) CancelExchangeOrder(orderID int64) error {
+func (c *CoinbasePro) CancelExchangeOrder(orderID string) error {
 	return errors.New("not yet implemented")
 }
 
