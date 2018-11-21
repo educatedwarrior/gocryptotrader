@@ -411,15 +411,27 @@ func WebsocketDataHandler(ws *exchange.Websocket) {
 
 			case exchange.TradeData:
 				// Trade Data
-				if Bot.Settings.Verbose {
-					log.Println("Websocket trades Updated:   ", data.(exchange.TradeData))
-				}
+				//if Bot.Settings.Verbose {
+				//	log.Println("Websocket trades Updated:   ", data.(exchange.TradeData))
+				//}
 
 			case exchange.TickerData:
 				// Ticker data
-				if Bot.Settings.Verbose {
-					log.Println("Websocket Ticker Updated:   ", data.(exchange.TickerData))
+				//if Bot.Settings.Verbose {
+				//	log.Println("Websocket Ticker Updated:   ", data.(exchange.TickerData))
+				//}
+
+				result := data.(exchange.TickerData)
+				tickerNew := ticker.Price{
+					Pair:         result.Pair,
+					LastUpdated:  result.Timestamp,
+					CurrencyPair: result.Pair.Pair().String(),
+					Last:         result.ClosePrice,
+					High:         result.HighPrice,
+					Low:          result.LowPrice,
+					Volume:       result.Quantity,
 				}
+				ticker.ProcessTicker(ws.GetName(), result.Pair, tickerNew, result.AssetType)
 			case exchange.KlineData:
 				// Kline data
 				if Bot.Settings.Verbose {
@@ -428,7 +440,10 @@ func WebsocketDataHandler(ws *exchange.Websocket) {
 			case exchange.WebsocketOrderbookUpdate:
 				// Orderbook data
 				if Bot.Settings.Verbose {
-					log.Println("Websocket Orderbook Updated:", data.(exchange.WebsocketOrderbookUpdate))
+					//result := data.(exchange.WebsocketOrderbookUpdate)
+
+					//log.Printf("Websocket %s %s orderbook updated", ws.GetName(), result.Pair.Pair().String())
+					//log.Println("Websocket Orderbook Updated:", data.(exchange.WebsocketOrderbookUpdate))
 				}
 			default:
 				if Bot.Settings.Verbose {

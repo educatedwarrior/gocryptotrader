@@ -4,13 +4,61 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets current default settings
+func (k *Kraken) SetDefaults() {
+	k.Name = "Kraken"
+	k.Enabled = false
+	k.FiatFee = 0.35
+	k.CryptoFee = 0.10
+	k.Verbose = false
+	k.APIWithdrawPermissions = exchange.AutoWithdrawCryptoWithSetup | exchange.WithdrawCryptoWith2FA | exchange.AutoWithdrawFiatWithSetup | exchange.WithdrawFiatWith2FA
+	k.RequestCurrencyPairFormat.Delimiter = ""
+	k.RequestCurrencyPairFormat.Uppercase = true
+	k.RequestCurrencyPairFormat.Separator = ","
+	k.ConfigCurrencyPairFormat.Delimiter = "-"
+	k.ConfigCurrencyPairFormat.Uppercase = true
+	k.AssetTypes = []string{ticker.Spot}
+	k.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	k.Requester = request.New(k.Name,
+		request.NewRateLimit(time.Second, krakenAuthRate),
+		request.NewRateLimit(time.Second, krakenUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	k.API.Endpoints.URLDefault = krakenAPIURL
+	k.API.Endpoints.URL = k.API.Endpoints.URLDefault
+}
+
+// Setup sets current exchange configuration
+func (k *Kraken) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		k.SetEnabled(false)
+	} else {
+		err := k.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the Kraken go routine
 func (k *Kraken) Start(wg *sync.WaitGroup) {
@@ -24,7 +72,6 @@ func (k *Kraken) Start(wg *sync.WaitGroup) {
 // Run implements the Kraken wrapper
 func (k *Kraken) Run() {
 	if k.Verbose {
-		log.Printf("%s polling delay: %ds.\n", k.GetName(), k.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", k.GetName(), len(k.EnabledPairs), k.EnabledPairs)
 	}
 

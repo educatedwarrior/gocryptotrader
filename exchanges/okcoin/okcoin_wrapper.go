@@ -4,13 +4,89 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets current default values for this package
+func (o *OKCoin) SetDefaults() {
+	o.SetErrorDefaults()
+	o.SetWebsocketErrorDefaults()
+	o.Enabled = false
+	o.Verbose = false
+	o.AssetTypes = []string{ticker.Spot}
+	o.APIWithdrawPermissions = exchange.AutoWithdrawCrypto | exchange.WithdrawFiatViaWebsiteOnly
+	o.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    false,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          true,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: false,
+		},
+	}
+	o.WebsocketInit()
+}
+
+// Setup sets exchange configuration parameters
+func (o *OKCoin) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		o.SetEnabled(false)
+	} else {
+		if exch.Name == "OKCOIN International" {
+			o.AssetTypes = append(o.AssetTypes, o.FuturesValues...)
+			o.API.Endpoints.URLDefault = okcoinAPIURL
+			o.API.Endpoints.URL = o.API.Endpoints.URLDefault
+			o.Name = "OKCOIN International"
+			o.WebsocketURL = okcoinWebsocketURL
+			o.setCurrencyPairFormats()
+			o.Requester = request.New(o.Name,
+				request.NewRateLimit(time.Second, okcoinAuthRate),
+				request.NewRateLimit(time.Second, okcoinUnauthRate),
+				common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+			o.ConfigCurrencyPairFormat.Delimiter = "_"
+			o.ConfigCurrencyPairFormat.Uppercase = true
+			o.RequestCurrencyPairFormat.Uppercase = false
+			o.RequestCurrencyPairFormat.Delimiter = "_"
+		} else {
+			o.API.Endpoints.URLDefault = okcoinAPIURLChina
+			o.API.Endpoints.URL = o.API.Endpoints.URLDefault
+			o.Name = "OKCOIN China"
+			o.WebsocketURL = okcoinWebsocketURLChina
+			o.setCurrencyPairFormats()
+			o.Requester = request.New(o.Name,
+				request.NewRateLimit(time.Second, okcoinAuthRate),
+				request.NewRateLimit(time.Second, okcoinUnauthRate),
+				common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+			o.ConfigCurrencyPairFormat.Delimiter = ""
+			o.ConfigCurrencyPairFormat.Uppercase = true
+			o.RequestCurrencyPairFormat.Uppercase = false
+			o.RequestCurrencyPairFormat.Delimiter = ""
+		}
+
+		err := o.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = o.WebsocketSetup(o.WsConnect,
+			exch.Name,
+			exch.Features.Enabled.Websocket,
+			okcoinWebsocketURL,
+			o.WebsocketURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the OKCoin go routine
 func (o *OKCoin) Start(wg *sync.WaitGroup) {
@@ -25,11 +101,10 @@ func (o *OKCoin) Start(wg *sync.WaitGroup) {
 func (o *OKCoin) Run() {
 	if o.Verbose {
 		log.Printf("%s Websocket: %s. (url: %s).\n", o.GetName(), common.IsEnabled(o.Websocket.IsEnabled()), o.WebsocketURL)
-		log.Printf("%s polling delay: %ds.\n", o.GetName(), o.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", o.GetName(), len(o.EnabledPairs), o.EnabledPairs)
 	}
 
-	if o.APIUrl == okcoinAPIURL {
+	if o.API.Endpoints.URL == okcoinAPIURL {
 		// OKCoin International
 		forceUpgrade := false
 		if !common.StringDataContains(o.EnabledPairs, "_") || !common.StringDataContains(o.AvailablePairs, "_") {
@@ -63,7 +138,7 @@ func (o *OKCoin) UpdateTicker(p pair.CurrencyPair, assetType string) (ticker.Pri
 	currency := exchange.FormatExchangeCurrency(o.Name, p).String()
 	var tickerPrice ticker.Price
 
-	if assetType != ticker.Spot && o.APIUrl == okcoinAPIURL {
+	if assetType != ticker.Spot && o.API.Endpoints.URL == okcoinAPIURL {
 		tick, err := o.GetFuturesTicker(currency, assetType)
 		if err != nil {
 			return tickerPrice, err

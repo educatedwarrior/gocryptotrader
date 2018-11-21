@@ -29,9 +29,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - Binance Setup() init error")
 	}
 
-	binanceConfig.AuthenticatedAPISupport = true
-	binanceConfig.APIKey = testAPIKey
-	binanceConfig.APISecret = testAPISecret
+	binanceConfig.API.AuthenticatedSupport = true
+	binanceConfig.API.Credentials.Key = testAPIKey
+	binanceConfig.API.Credentials.Secret = testAPISecret
 	b.Setup(binanceConfig)
 }
 

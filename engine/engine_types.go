@@ -29,6 +29,7 @@ type Settings struct {
 	EnableExchangeRESTSupport      bool
 	EnableExchangeWebsocketSupport bool
 	MaxHTTPRequestJobsLimit        int
+	RequestTimeoutRetryAttempts    int
 
 	// Global HTTP related settings
 	GlobalHTTPTimeout   time.Duration

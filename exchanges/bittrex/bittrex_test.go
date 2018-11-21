@@ -2,7 +2,6 @@ package bittrex
 
 import (
 	"testing"
-	"time"
 
 	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/symbol"
@@ -34,10 +33,8 @@ func TestSetup(t *testing.T) {
 
 	b.Setup(bConfig)
 
-	if !b.IsEnabled() || b.AuthenticatedAPISupport ||
-		b.RESTPollingDelay != time.Duration(10) || b.Verbose ||
-		len(b.BaseCurrencies) < 1 || len(b.AvailablePairs) < 1 ||
-		len(b.EnabledPairs) < 1 {
+	if !b.IsEnabled() || b.API.AuthenticatedSupport ||
+		b.Verbose || len(b.BaseCurrencies) < 1 || len(b.AvailablePairs) < 1 || len(b.EnabledPairs) < 1 {
 		t.Error("Test Failed - Bittrex Setup values not set correctly")
 	}
 }

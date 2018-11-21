@@ -4,13 +4,68 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets default settings for hitbtc
+func (h *HitBTC) SetDefaults() {
+	h.Name = "HitBTC"
+	h.Enabled = false
+	h.Fee = 0
+	h.Verbose = false
+	h.APIWithdrawPermissions = exchange.AutoWithdrawCrypto
+	h.RequestCurrencyPairFormat.Delimiter = ""
+	h.RequestCurrencyPairFormat.Uppercase = true
+	h.ConfigCurrencyPairFormat.Delimiter = "-"
+	h.ConfigCurrencyPairFormat.Uppercase = true
+	h.AssetTypes = []string{ticker.Spot}
+	h.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          true,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	h.Requester = request.New(h.Name,
+		request.NewRateLimit(time.Second, hitbtcAuthRate),
+		request.NewRateLimit(time.Second, hitbtcUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	h.API.Endpoints.URLDefault = apiURL
+	h.API.Endpoints.URL = h.API.Endpoints.URLDefault
+	h.WebsocketInit()
+}
+
+// Setup sets user exchange configuration settings
+func (h *HitBTC) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		h.SetEnabled(false)
+	} else {
+		err := h.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = h.WebsocketSetup(h.WsConnect,
+			exch.Name,
+			exch.Features.Enabled.Websocket,
+			hitbtcWebsocketAddress,
+			exch.API.Endpoints.WebsocketURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the HitBTC go routine
 func (h *HitBTC) Start(wg *sync.WaitGroup) {
@@ -25,7 +80,6 @@ func (h *HitBTC) Start(wg *sync.WaitGroup) {
 func (h *HitBTC) Run() {
 	if h.Verbose {
 		log.Printf("%s Websocket: %s (url: %s).\n", h.GetName(), common.IsEnabled(h.Websocket.IsEnabled()), hitbtcWebsocketAddress)
-		log.Printf("%s polling delay: %ds.\n", h.GetName(), h.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", h.GetName(), len(h.EnabledPairs), h.EnabledPairs)
 	}
 

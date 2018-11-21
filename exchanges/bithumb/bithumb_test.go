@@ -28,9 +28,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - Bithumb Setup() init error")
 	}
 
-	bitConfig.AuthenticatedAPISupport = true
-	bitConfig.APIKey = testAPIKey
-	bitConfig.APISecret = testAPISecret
+	bitConfig.API.AuthenticatedSupport = true
+	bitConfig.API.Credentials.Key = testAPIKey
+	bitConfig.API.Credentials.Secret = testAPISecret
 
 	b.Setup(bitConfig)
 }

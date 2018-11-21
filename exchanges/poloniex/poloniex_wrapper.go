@@ -4,13 +4,68 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets default settings for poloniex
+func (p *Poloniex) SetDefaults() {
+	p.Name = "Poloniex"
+	p.Enabled = false
+	p.Fee = 0
+	p.Verbose = false
+	p.APIWithdrawPermissions = exchange.AutoWithdrawCryptoWithAPIPermission
+	p.RequestCurrencyPairFormat.Delimiter = "_"
+	p.RequestCurrencyPairFormat.Uppercase = true
+	p.ConfigCurrencyPairFormat.Delimiter = "_"
+	p.ConfigCurrencyPairFormat.Uppercase = true
+	p.AssetTypes = []string{ticker.Spot}
+	p.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          true,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	p.Requester = request.New(p.Name,
+		request.NewRateLimit(time.Second, poloniexAuthRate),
+		request.NewRateLimit(time.Second, poloniexUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	p.API.Endpoints.URLDefault = poloniexAPIURL
+	p.API.Endpoints.URL = p.API.Endpoints.URLDefault
+	p.WebsocketInit()
+}
+
+// Setup sets user exchange configuration settings
+func (p *Poloniex) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		p.SetEnabled(false)
+	} else {
+		err := p.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = p.WebsocketSetup(p.WsConnect,
+			exch.Name,
+			exch.Features.Enabled.Websocket,
+			poloniexWebsocketAddress,
+			exch.API.Endpoints.WebsocketURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the Poloniex go routine
 func (p *Poloniex) Start(wg *sync.WaitGroup) {
@@ -25,7 +80,6 @@ func (p *Poloniex) Start(wg *sync.WaitGroup) {
 func (p *Poloniex) Run() {
 	if p.Verbose {
 		log.Printf("%s Websocket: %s (url: %s).\n", p.GetName(), common.IsEnabled(p.Websocket.IsEnabled()), poloniexWebsocketAddress)
-		log.Printf("%s polling delay: %ds.\n", p.GetName(), p.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", p.GetName(), len(p.EnabledPairs), p.EnabledPairs)
 	}
 

@@ -4,12 +4,60 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
+	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets default values for the exchange
+func (g *Gateio) SetDefaults() {
+	g.Name = "GateIO"
+	g.Enabled = false
+	g.Verbose = false
+	g.APIWithdrawPermissions = exchange.AutoWithdrawCrypto
+	g.RequestCurrencyPairFormat.Delimiter = "_"
+	g.RequestCurrencyPairFormat.Uppercase = false
+	g.ConfigCurrencyPairFormat.Delimiter = "_"
+	g.ConfigCurrencyPairFormat.Uppercase = true
+	g.AssetTypes = []string{ticker.Spot}
+	g.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	g.Requester = request.New(g.Name,
+		request.NewRateLimit(time.Second*10, gateioAuthRate),
+		request.NewRateLimit(time.Second*10, gateioUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	g.API.Endpoints.URLDefault = gateioTradeURL
+	g.API.Endpoints.URL = g.API.Endpoints.URLDefault
+	g.API.Endpoints.URLSecondaryDefault = gateioMarketURL
+	g.API.Endpoints.URLSecondary = g.API.Endpoints.URLSecondaryDefault
+}
+
+// Setup sets user configuration
+func (g *Gateio) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		g.SetEnabled(false)
+	} else {
+		err := g.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the GateIO go routine
 func (g *Gateio) Start(wg *sync.WaitGroup) {
@@ -23,7 +71,6 @@ func (g *Gateio) Start(wg *sync.WaitGroup) {
 // Run implements the GateIO wrapper
 func (g *Gateio) Run() {
 	if g.Verbose {
-		log.Printf("%s polling delay: %ds.\n", g.GetName(), g.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", g.GetName(), len(g.EnabledPairs), g.EnabledPairs)
 	}
 

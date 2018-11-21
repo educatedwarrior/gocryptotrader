@@ -29,9 +29,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - Poloniex Setup() init error")
 	}
 
-	poloniexConfig.AuthenticatedAPISupport = true
-	poloniexConfig.APIKey = apiKey
-	poloniexConfig.APISecret = apiSecret
+	poloniexConfig.API.AuthenticatedSupport = true
+	poloniexConfig.API.Credentials.Key = apiKey
+	poloniexConfig.API.Credentials.Secret = apiSecret
 
 	p.Setup(poloniexConfig)
 }

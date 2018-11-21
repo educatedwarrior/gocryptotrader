@@ -2,12 +2,38 @@ package alphapoint
 
 import (
 	"errors"
+	"time"
 
+	"github.com/thrasher-/gocryptotrader/common"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets current default settings
+func (a *Alphapoint) SetDefaults() {
+	a.API.Endpoints.URL = alphapointDefaultAPIURL
+	a.WebsocketURL = alphapointDefaultWebsocketURL
+	a.AssetTypes = []string{ticker.Spot}
+	a.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    false,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          true,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: false,
+		},
+	}
+	a.APIWithdrawPermissions = exchange.WithdrawCryptoWith2FA | exchange.AutoWithdrawCryptoWithAPIPermission
+	a.Requester = request.New(a.Name,
+		request.NewRateLimit(time.Minute*10, alphapointAuthRate),
+		request.NewRateLimit(time.Minute*10, alphapointUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+}
 
 // GetExchangeAccountInfo retrieves balances for all enabled currencies on the
 // Alphapoint exchange

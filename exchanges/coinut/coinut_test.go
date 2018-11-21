@@ -2,7 +2,6 @@ package coinut
 
 import (
 	"testing"
-	"time"
 
 	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/symbol"
@@ -30,8 +29,8 @@ func TestSetup(t *testing.T) {
 	}
 	c.Setup(bConfig)
 
-	if !c.IsEnabled() || c.AuthenticatedAPISupport ||
-		c.RESTPollingDelay != time.Duration(10) || c.Verbose ||
+	if !c.IsEnabled() || c.API.AuthenticatedSupport ||
+		c.Verbose ||
 		c.Websocket.IsEnabled() || len(c.BaseCurrencies) < 1 ||
 		len(c.AvailablePairs) < 1 || len(c.EnabledPairs) < 1 {
 		t.Error("Test Failed - Coinut Setup values not set correctly")

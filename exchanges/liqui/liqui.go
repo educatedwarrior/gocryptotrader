@@ -9,10 +9,7 @@ import (
 	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
-	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/exchanges"
-	"github.com/thrasher-/gocryptotrader/exchanges/request"
-	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
 
 const (
@@ -39,76 +36,7 @@ const (
 // Liqui is the overarching type across the liqui package
 type Liqui struct {
 	exchange.Base
-	Ticker map[string]Ticker
-	Info   Info
-}
-
-// SetDefaults sets current default values for liqui
-func (l *Liqui) SetDefaults() {
-	l.Name = "Liqui"
-	l.Enabled = false
-	l.Fee = 0.25
-	l.Verbose = false
-	l.RESTPollingDelay = 10
-	l.Ticker = make(map[string]Ticker)
-	l.APIWithdrawPermissions = exchange.NoAPIWithdrawalMethods
-	l.RequestCurrencyPairFormat.Delimiter = "_"
-	l.RequestCurrencyPairFormat.Uppercase = false
-	l.RequestCurrencyPairFormat.Separator = "-"
-	l.ConfigCurrencyPairFormat.Delimiter = "_"
-	l.ConfigCurrencyPairFormat.Uppercase = true
-	l.AssetTypes = []string{ticker.Spot}
-	l.SupportsAutoPairUpdating = true
-	l.SupportsRESTTickerBatching = true
-	l.SupportsRESTAPI = true
-	l.SupportsWebsocketAPI = false
-	l.Requester = request.New(l.Name,
-		request.NewRateLimit(time.Second, liquiAuthRate),
-		request.NewRateLimit(time.Second, liquiUnauthRate),
-		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
-	l.APIUrlDefault = liquiAPIPublicURL
-	l.APIUrl = l.APIUrlDefault
-	l.APIUrlSecondaryDefault = liquiAPIPrivateURL
-	l.APIUrlSecondary = l.APIUrlSecondaryDefault
-	l.WebsocketInit()
-}
-
-// Setup sets exchange configuration parameters for liqui
-func (l *Liqui) Setup(exch config.ExchangeConfig) {
-	if !exch.Enabled {
-		l.SetEnabled(false)
-	} else {
-		l.Enabled = true
-		l.AuthenticatedAPISupport = exch.AuthenticatedAPISupport
-		l.SetAPIKeys(exch.APIKey, exch.APISecret, "", false)
-		l.SetHTTPClientTimeout(exch.HTTPTimeout)
-		l.SetHTTPClientUserAgent(exch.HTTPUserAgent)
-		l.RESTPollingDelay = exch.RESTPollingDelay
-		l.Verbose = exch.Verbose
-		l.BaseCurrencies = common.SplitStrings(exch.BaseCurrencies, ",")
-		l.AvailablePairs = common.SplitStrings(exch.AvailablePairs, ",")
-		l.EnabledPairs = common.SplitStrings(exch.EnabledPairs, ",")
-		err := l.SetCurrencyPairFormat()
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = l.SetAssetTypes()
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = l.SetAutoPairDefaults()
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = l.SetAPIURL(exch)
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = l.SetClientProxyAddress(exch.ProxyAddress)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	Info Info
 }
 
 // GetAvailablePairs returns all available pairs
@@ -129,7 +57,7 @@ func (l *Liqui) GetAvailablePairs(nonHidden bool) []string {
 // commission for each pair.
 func (l *Liqui) GetInfo() (Info, error) {
 	resp := Info{}
-	req := fmt.Sprintf("%s/%s/%s/", l.APIUrl, liquiAPIPublicVersion, liquiInfo)
+	req := fmt.Sprintf("%s/%s/%s/", l.API.Endpoints.URL, liquiAPIPublicVersion, liquiInfo)
 
 	return resp, l.SendHTTPRequest(req, &resp)
 }
@@ -148,7 +76,7 @@ func (l *Liqui) GetTicker(currencyPair string) (map[string]Ticker, error) {
 	}
 
 	response := Response{Data: make(map[string]Ticker)}
-	req := fmt.Sprintf("%s/%s/%s/%s", l.APIUrl, liquiAPIPublicVersion, liquiTicker, currencyPair)
+	req := fmt.Sprintf("%s/%s/%s/%s", l.API.Endpoints.URL, liquiAPIPublicVersion, liquiTicker, currencyPair)
 
 	return response.Data, l.SendHTTPRequest(req, &response.Data)
 }
@@ -164,7 +92,7 @@ func (l *Liqui) GetDepth(currencyPair string) (Orderbook, error) {
 	}
 
 	response := Response{Data: make(map[string]Orderbook)}
-	req := fmt.Sprintf("%s/%s/%s/%s", l.APIUrl, liquiAPIPublicVersion, liquiDepth, currencyPair)
+	req := fmt.Sprintf("%s/%s/%s/%s", l.API.Endpoints.URL, liquiAPIPublicVersion, liquiDepth, currencyPair)
 
 	return response.Data[currencyPair], l.SendHTTPRequest(req, &response.Data)
 }
@@ -180,7 +108,7 @@ func (l *Liqui) GetTrades(currencyPair string) ([]Trades, error) {
 	}
 
 	response := Response{Data: make(map[string][]Trades)}
-	req := fmt.Sprintf("%s/%s/%s/%s", l.APIUrl, liquiAPIPublicVersion, liquiTrades, currencyPair)
+	req := fmt.Sprintf("%s/%s/%s/%s", l.API.Endpoints.URL, liquiAPIPublicVersion, liquiTrades, currencyPair)
 
 	return response.Data[currencyPair], l.SendHTTPRequest(req, &response.Data)
 }
@@ -275,7 +203,7 @@ func (l *Liqui) SendHTTPRequest(path string, result interface{}) error {
 
 // SendAuthenticatedHTTPRequest sends an authenticated http request to liqui
 func (l *Liqui) SendAuthenticatedHTTPRequest(method string, values url.Values, result interface{}) (err error) {
-	if !l.AuthenticatedAPISupport {
+	if !l.API.AuthenticatedSupport {
 		return fmt.Errorf(exchange.WarningAuthenticatedRequestWithoutCredentialsSet, l.Name)
 	}
 
@@ -288,20 +216,20 @@ func (l *Liqui) SendAuthenticatedHTTPRequest(method string, values url.Values, r
 	values.Set("method", method)
 
 	encoded := values.Encode()
-	hmac := common.GetHMAC(common.HashSHA512, []byte(encoded), []byte(l.APISecret))
+	hmac := common.GetHMAC(common.HashSHA512, []byte(encoded), []byte(l.API.Credentials.Secret))
 
 	if l.Verbose {
 		log.Printf("Sending POST request to %s calling method %s with params %s\n",
-			l.APIUrlSecondary, method, encoded)
+			l.API.Endpoints.URLSecondary, method, encoded)
 	}
 
 	headers := make(map[string]string)
-	headers["Key"] = l.APIKey
+	headers["Key"] = l.API.Credentials.Key
 	headers["Sign"] = common.HexEncodeToString(hmac)
 	headers["Content-Type"] = "application/x-www-form-urlencoded"
 
 	return l.SendPayload("POST",
-		l.APIUrlSecondary, headers,
+		l.API.Endpoints.URLSecondary, headers,
 		strings.NewReader(encoded),
 		result,
 		true,

@@ -7,11 +7,64 @@ import (
 	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	exchange "github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets the basic defaults for Bitmex
+func (b *Bitmex) SetDefaults() {
+	b.Name = "Bitmex"
+	b.Enabled = false
+	b.Verbose = false
+	b.APIWithdrawPermissions = exchange.AutoWithdrawCryptoWithAPIPermission | exchange.WithdrawCryptoWithEmail | exchange.WithdrawCryptoWith2FA
+	b.RequestCurrencyPairFormat.Delimiter = ""
+	b.RequestCurrencyPairFormat.Uppercase = true
+	b.ConfigCurrencyPairFormat.Delimiter = ""
+	b.ConfigCurrencyPairFormat.Uppercase = true
+	b.AssetTypes = []string{ticker.Spot}
+	b.Requester = request.New(b.Name,
+		request.NewRateLimit(time.Second, bitmexAuthRate),
+		request.NewRateLimit(time.Second, bitmexUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	b.API.Endpoints.URLDefault = bitmexAPIURL
+	b.API.Endpoints.URL = b.API.Endpoints.URLDefault
+	b.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          true,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	b.WebsocketInit()
+}
+
+// Setup takes in the supplied exchange configuration details and sets params
+func (b *Bitmex) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		b.SetEnabled(false)
+	} else {
+		err := b.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = b.WebsocketSetup(b.WsConnector,
+			exch.Name,
+			exch.Features.Enabled.Websocket,
+			bitmexWSURL,
+			exch.API.Endpoints.WebsocketURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the Bitmex go routine
 func (b *Bitmex) Start(wg *sync.WaitGroup) {
@@ -26,7 +79,6 @@ func (b *Bitmex) Start(wg *sync.WaitGroup) {
 func (b *Bitmex) Run() {
 	if b.Verbose {
 		log.Printf("%s Websocket: %s. (url: %s).\n", b.GetName(), common.IsEnabled(b.Websocket.IsEnabled()), b.WebsocketURL)
-		log.Printf("%s polling delay: %ds.\n", b.GetName(), b.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", b.GetName(), len(b.EnabledPairs), b.EnabledPairs)
 	}
 

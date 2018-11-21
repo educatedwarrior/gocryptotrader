@@ -31,9 +31,9 @@ func TestSetup(t *testing.T) {
 	}
 
 	if apiKey != "" && apiSecret != "" {
-		bConfig.APIKey = apiKey
-		bConfig.APISecret = apiSecret
-		bConfig.AuthenticatedAPISupport = true
+		bConfig.API.Credentials.Key = apiKey
+		bConfig.API.Credentials.Secret = apiSecret
+		bConfig.API.AuthenticatedSupport = true
 	}
 
 	b.Setup(bConfig)

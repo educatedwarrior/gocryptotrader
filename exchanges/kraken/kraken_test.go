@@ -29,10 +29,10 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - kraken Setup() init error", err)
 	}
 
-	krakenConfig.AuthenticatedAPISupport = true
-	krakenConfig.APIKey = apiKey
-	krakenConfig.APISecret = apiSecret
-	krakenConfig.ClientID = clientID
+	krakenConfig.API.AuthenticatedSupport = true
+	krakenConfig.API.Credentials.Key = apiKey
+	krakenConfig.API.Credentials.Secret = apiSecret
+	krakenConfig.API.Credentials.ClientID = clientID
 
 	k.Setup(krakenConfig)
 }

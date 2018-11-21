@@ -4,13 +4,60 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	exchange "github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets the basic defaults for Bitflyer
+func (b *Bitflyer) SetDefaults() {
+	b.Name = "Bitflyer"
+	b.Enabled = false
+	b.Verbose = false
+	b.APIWithdrawPermissions = exchange.WithdrawCryptoViaWebsiteOnly | exchange.AutoWithdrawFiat
+	b.RequestCurrencyPairFormat.Delimiter = "_"
+	b.RequestCurrencyPairFormat.Uppercase = true
+	b.ConfigCurrencyPairFormat.Delimiter = "_"
+	b.ConfigCurrencyPairFormat.Uppercase = true
+	b.AssetTypes = []string{ticker.Spot}
+	b.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    false,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: false,
+		},
+	}
+	b.Requester = request.New(b.Name,
+		request.NewRateLimit(time.Minute, bitflyerAuthRate),
+		request.NewRateLimit(time.Minute, bitflyerUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	b.API.Endpoints.URLDefault = japanURL
+	b.API.Endpoints.URL = b.API.Endpoints.URLDefault
+	b.API.Endpoints.URLSecondaryDefault = chainAnalysis
+	b.API.Endpoints.URLSecondary = b.API.Endpoints.URLSecondaryDefault
+}
+
+// Setup takes in the supplied exchange configuration details and sets params
+func (b *Bitflyer) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		b.SetEnabled(false)
+	} else {
+		err := b.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the Bitflyer go routine
 func (b *Bitflyer) Start(wg *sync.WaitGroup) {
@@ -24,7 +71,6 @@ func (b *Bitflyer) Start(wg *sync.WaitGroup) {
 // Run implements the Bitflyer wrapper
 func (b *Bitflyer) Run() {
 	if b.Verbose {
-		log.Printf("%s polling delay: %ds.\n", b.GetName(), b.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", b.GetName(), len(b.EnabledPairs), b.EnabledPairs)
 	}
 

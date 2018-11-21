@@ -4,14 +4,61 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
-
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets basic defaults
+func (b *BTCMarkets) SetDefaults() {
+	b.Name = "BTC Markets"
+	b.Enabled = false
+	b.Fee = 0.85
+	b.Verbose = false
+	b.Ticker = make(map[string]Ticker)
+	b.APIWithdrawPermissions = exchange.AutoWithdrawCrypto | exchange.AutoWithdrawFiat
+	b.RequestCurrencyPairFormat.Delimiter = ""
+	b.RequestCurrencyPairFormat.Uppercase = true
+	b.ConfigCurrencyPairFormat.Delimiter = "-"
+	b.ConfigCurrencyPairFormat.Uppercase = true
+	b.AssetTypes = []string{ticker.Spot}
+	b.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	b.Requester = request.New(b.Name,
+		request.NewRateLimit(time.Second*10, btcmarketsAuthLimit),
+		request.NewRateLimit(time.Second*10, btcmarketsUnauthLimit),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	b.API.Endpoints.URLDefault = btcMarketsAPIURL
+	b.API.Endpoints.URL = b.API.Endpoints.URLDefault
+	b.API.CredentialsValidator.RequiresBase64DecodeSecret = true
+}
+
+// Setup takes in an exchange configuration and sets all parameters
+func (b *BTCMarkets) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		b.SetEnabled(false)
+	} else {
+		err := b.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the BTC Markets go routine
 func (b *BTCMarkets) Start(wg *sync.WaitGroup) {
@@ -25,7 +72,6 @@ func (b *BTCMarkets) Start(wg *sync.WaitGroup) {
 // Run implements the BTC Markets wrapper
 func (b *BTCMarkets) Run() {
 	if b.Verbose {
-		log.Printf("%s polling delay: %ds.\n", b.GetName(), b.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", b.GetName(), len(b.EnabledPairs), b.EnabledPairs)
 	}
 

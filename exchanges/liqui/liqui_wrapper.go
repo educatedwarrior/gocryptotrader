@@ -4,13 +4,63 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets current default values for liqui
+func (l *Liqui) SetDefaults() {
+	l.Name = "Liqui"
+	l.Enabled = false
+	l.Fee = 0.25
+	l.Verbose = false
+	l.APIWithdrawPermissions = exchange.NoAPIWithdrawalMethods
+	l.RequestCurrencyPairFormat.Delimiter = "_"
+	l.RequestCurrencyPairFormat.Uppercase = false
+	l.RequestCurrencyPairFormat.Separator = "-"
+	l.ConfigCurrencyPairFormat.Delimiter = "_"
+	l.ConfigCurrencyPairFormat.Uppercase = true
+	l.AssetTypes = []string{ticker.Spot}
+	l.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	l.Requester = request.New(l.Name,
+		request.NewRateLimit(time.Second, liquiAuthRate),
+		request.NewRateLimit(time.Second, liquiUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	l.API.Endpoints.URLDefault = liquiAPIPublicURL
+	l.API.Endpoints.URL = l.API.Endpoints.URLDefault
+	l.API.Endpoints.URLSecondaryDefault = liquiAPIPrivateURL
+	l.API.Endpoints.URLSecondary = l.API.Endpoints.URLSecondaryDefault
+	l.WebsocketInit()
+}
+
+// Setup sets exchange configuration parameters for liqui
+func (l *Liqui) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		l.SetEnabled(false)
+	} else {
+		err := l.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the Liqui go routine
 func (l *Liqui) Start(wg *sync.WaitGroup) {
@@ -24,7 +74,6 @@ func (l *Liqui) Start(wg *sync.WaitGroup) {
 // Run implements the Liqui wrapper
 func (l *Liqui) Run() {
 	if l.Verbose {
-		log.Printf("%s polling delay: %ds.\n", l.GetName(), l.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", l.GetName(), len(l.EnabledPairs), l.EnabledPairs)
 	}
 

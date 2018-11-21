@@ -31,9 +31,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - bitflyer Setup() init error")
 	}
 
-	bitflyerConfig.AuthenticatedAPISupport = true
-	bitflyerConfig.APIKey = testAPIKey
-	bitflyerConfig.APISecret = testAPISecret
+	bitflyerConfig.API.AuthenticatedSupport = true
+	bitflyerConfig.API.Credentials.Key = testAPIKey
+	bitflyerConfig.API.Credentials.Secret = testAPISecret
 
 	b.Setup(bitflyerConfig)
 }

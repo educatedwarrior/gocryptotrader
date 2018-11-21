@@ -4,13 +4,62 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	exchange "github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets current default value for WEX
+func (w *WEX) SetDefaults() {
+	w.Name = "WEX"
+	w.Enabled = false
+	w.Fee = 0.2
+	w.Verbose = false
+	w.APIWithdrawPermissions = exchange.AutoWithdrawCryptoWithAPIPermission
+	w.RequestCurrencyPairFormat.Delimiter = "_"
+	w.RequestCurrencyPairFormat.Uppercase = false
+	w.RequestCurrencyPairFormat.Separator = "-"
+	w.ConfigCurrencyPairFormat.Delimiter = "_"
+	w.ConfigCurrencyPairFormat.Uppercase = true
+	w.AssetTypes = []string{ticker.Spot}
+	w.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	w.Requester = request.New(w.Name,
+		request.NewRateLimit(time.Second, wexAuthRate),
+		request.NewRateLimit(time.Second, wexUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	w.API.Endpoints.URLDefault = wexAPIPublicURL
+	w.API.Endpoints.URL = w.API.Endpoints.URLDefault
+	w.API.Endpoints.URLSecondaryDefault = wexAPIPrivateURL
+	w.API.Endpoints.URLSecondary = w.API.Endpoints.URLSecondaryDefault
+}
+
+// Setup sets exchange configuration parameters for WEX
+func (w *WEX) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		w.SetEnabled(false)
+	} else {
+		err := w.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the WEX go routine
 func (w *WEX) Start(wg *sync.WaitGroup) {
@@ -24,7 +73,6 @@ func (w *WEX) Start(wg *sync.WaitGroup) {
 // Run implements the WEX wrapper
 func (w *WEX) Run() {
 	if w.Verbose {
-		log.Printf("%s polling delay: %ds.\n", w.GetName(), w.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", w.GetName(), len(w.EnabledPairs), w.EnabledPairs)
 	}
 

@@ -29,9 +29,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - liqui Setup() init error")
 	}
 
-	liquiConfig.AuthenticatedAPISupport = true
-	liquiConfig.APIKey = apiKey
-	liquiConfig.APISecret = apiSecret
+	liquiConfig.API.AuthenticatedSupport = true
+	liquiConfig.API.Credentials.Key = apiKey
+	liquiConfig.API.Credentials.Secret = apiSecret
 
 	l.Setup(liquiConfig)
 }
@@ -77,7 +77,7 @@ func TestGetTrades(t *testing.T) {
 }
 
 func TestAuthRequests(t *testing.T) {
-	if l.APIKey != "" && l.APISecret != "" {
+	if l.API.Credentials.Key != "" && l.API.Credentials.Secret != "" {
 		_, err := l.GetAccountInfo()
 		if err == nil {
 			t.Error("Test Failed - liqui GetAccountInfo() error", err)

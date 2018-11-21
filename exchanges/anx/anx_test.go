@@ -28,9 +28,6 @@ func TestSetDefaults(t *testing.T) {
 	if a.Verbose != false {
 		t.Error("Test Failed - ANX SetDefaults() incorrect values set")
 	}
-	if a.RESTPollingDelay != 10 {
-		t.Error("Test Failed - ANX SetDefaults() incorrect values set")
-	}
 }
 
 func TestSetup(t *testing.T) {
@@ -45,16 +42,13 @@ func TestSetup(t *testing.T) {
 	if a.Enabled != true {
 		t.Error("Test Failed - ANX Setup() incorrect values set")
 	}
-	if a.AuthenticatedAPISupport != false {
+	if a.API.AuthenticatedSupport != false {
 		t.Error("Test Failed - ANX Setup() incorrect values set")
 	}
-	if len(a.APIKey) != 0 {
+	if len(a.API.Credentials.Key) != 0 {
 		t.Error("Test Failed - ANX Setup() incorrect values set")
 	}
-	if len(a.APISecret) != 0 {
-		t.Error("Test Failed - ANX Setup() incorrect values set")
-	}
-	if a.RESTPollingDelay != 10 {
+	if len(a.API.Credentials.Secret) != 0 {
 		t.Error("Test Failed - ANX Setup() incorrect values set")
 	}
 	if a.Verbose != false {

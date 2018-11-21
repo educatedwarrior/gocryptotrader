@@ -4,13 +4,61 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets default values for the exchange
+func (z *ZB) SetDefaults() {
+	z.Name = "ZB"
+	z.Enabled = false
+	z.Fee = 0
+	z.Verbose = false
+	z.APIWithdrawPermissions = exchange.AutoWithdrawCrypto
+	z.RequestCurrencyPairFormat.Delimiter = "_"
+	z.RequestCurrencyPairFormat.Uppercase = false
+	z.ConfigCurrencyPairFormat.Delimiter = "_"
+	z.ConfigCurrencyPairFormat.Uppercase = true
+	z.AssetTypes = []string{ticker.Spot}
+	z.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	z.Requester = request.New(z.Name,
+		request.NewRateLimit(time.Second*10, zbAuthRate),
+		request.NewRateLimit(time.Second*10, zbUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	z.API.Endpoints.URLDefault = zbTradeURL
+	z.API.Endpoints.URL = z.API.Endpoints.URLDefault
+	z.API.Endpoints.URLSecondaryDefault = zbMarketURL
+	z.API.Endpoints.URLSecondary = z.API.Endpoints.URLSecondaryDefault
+}
+
+// Setup sets user configuration
+func (z *ZB) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		z.SetEnabled(false)
+	} else {
+		err := z.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the OKEX go routine
 func (z *ZB) Start(wg *sync.WaitGroup) {
@@ -24,7 +72,6 @@ func (z *ZB) Start(wg *sync.WaitGroup) {
 // Run implements the OKEX wrapper
 func (z *ZB) Run() {
 	if z.Verbose {
-		log.Printf("%s polling delay: %ds.\n", z.GetName(), z.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", z.GetName(), len(z.EnabledPairs), z.EnabledPairs)
 	}
 

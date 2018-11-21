@@ -117,7 +117,7 @@ func (b *Bitmex) WsConnector() error {
 		return err
 	}
 
-	if b.AuthenticatedAPISupport {
+	if b.API.AuthenticatedSupport {
 		err := b.websocketSendAuth()
 		if err != nil {
 			return err
@@ -431,13 +431,13 @@ func (b *Bitmex) websocketSendAuth() error {
 	newTimestamp := strconv.FormatInt(timestamp, 10)
 	hmac := common.GetHMAC(common.HashSHA256,
 		[]byte("GET/realtime"+newTimestamp),
-		[]byte(b.APISecret))
+		[]byte(b.API.Credentials.Secret))
 
 	signature := common.HexEncodeToString(hmac)
 
 	var sendAuth WebsocketRequest
 	sendAuth.Command = "authKeyExpires"
-	sendAuth.Arguments = append(sendAuth.Arguments, b.APIKey)
+	sendAuth.Arguments = append(sendAuth.Arguments, b.API.Credentials.Key)
 	sendAuth.Arguments = append(sendAuth.Arguments, timestamp)
 	sendAuth.Arguments = append(sendAuth.Arguments, signature)
 

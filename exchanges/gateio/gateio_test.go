@@ -29,9 +29,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - GateIO Setup() init error")
 	}
 
-	gateioConfig.AuthenticatedAPISupport = true
-	gateioConfig.APIKey = apiKey
-	gateioConfig.APISecret = apiSecret
+	gateioConfig.API.AuthenticatedSupport = true
+	gateioConfig.API.Credentials.Key = apiKey
+	gateioConfig.API.Credentials.Secret = apiSecret
 
 	g.Setup(gateioConfig)
 }

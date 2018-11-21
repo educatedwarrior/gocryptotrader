@@ -31,9 +31,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - Okex Setup() init error")
 	}
 
-	okexConfig.AuthenticatedAPISupport = true
-	okexConfig.APIKey = apiKey
-	okexConfig.APISecret = apiSecret
+	okexConfig.API.AuthenticatedSupport = true
+	okexConfig.API.Credentials.Key = apiKey
+	okexConfig.API.Credentials.Secret = apiSecret
 
 	o.Setup(okexConfig)
 }
@@ -244,7 +244,7 @@ func TestGetSpotKline(t *testing.T) {
 func TestSpotNewOrder(t *testing.T) {
 	t.Parallel()
 
-	if o.APIKey == "" || o.APISecret == "" {
+	if o.API.Credentials.Key == "" || o.API.Credentials.Secret == "" {
 		t.Skip()
 	}
 
@@ -262,7 +262,7 @@ func TestSpotNewOrder(t *testing.T) {
 func TestSpotCancelOrder(t *testing.T) {
 	t.Parallel()
 
-	if o.APIKey == "" || o.APISecret == "" {
+	if o.API.Credentials.Key == "" || o.API.Credentials.Secret == "" {
 		t.Skip()
 	}
 
@@ -275,7 +275,7 @@ func TestSpotCancelOrder(t *testing.T) {
 func TestGetUserInfo(t *testing.T) {
 	t.Parallel()
 
-	if o.APIKey == "" || o.APISecret == "" {
+	if o.API.Credentials.Key == "" || o.API.Credentials.Secret == "" {
 		t.Skip()
 	}
 

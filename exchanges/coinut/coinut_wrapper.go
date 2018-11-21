@@ -4,13 +4,72 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets current default values
+func (c *COINUT) SetDefaults() {
+	c.Name = "COINUT"
+	c.Enabled = false
+	c.Verbose = false
+	c.TakerFee = 0.1 //spot
+	c.MakerFee = 0
+	c.Verbose = false
+	c.APIWithdrawPermissions = exchange.WithdrawCryptoViaWebsiteOnly | exchange.WithdrawFiatViaWebsiteOnly
+	c.RequestCurrencyPairFormat.Delimiter = ""
+	c.RequestCurrencyPairFormat.Uppercase = true
+	c.ConfigCurrencyPairFormat.Delimiter = ""
+	c.ConfigCurrencyPairFormat.Uppercase = true
+	c.AssetTypes = []string{ticker.Spot}
+	c.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          true,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	c.Requester = request.New(c.Name,
+		request.NewRateLimit(time.Second, coinutAuthRate),
+		request.NewRateLimit(time.Second, coinutUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	c.API.Endpoints.URLDefault = coinutAPIURL
+	c.API.Endpoints.URL = c.API.Endpoints.URLDefault
+	c.WebsocketInit()
+	c.API.CredentialsValidator.RequiresClientID = true
+	c.API.CredentialsValidator.RequiresBase64DecodeSecret = true
+}
+
+// Setup sets the current exchange configuration
+func (c *COINUT) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		c.SetEnabled(false)
+	} else {
+		err := c.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = c.WebsocketSetup(c.WsConnect,
+			exch.Name,
+			exch.Features.Enabled.Websocket,
+			coinutWebsocketURL,
+			exch.API.Endpoints.WebsocketURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the COINUT go routine
 func (c *COINUT) Start(wg *sync.WaitGroup) {
@@ -25,7 +84,6 @@ func (c *COINUT) Start(wg *sync.WaitGroup) {
 func (c *COINUT) Run() {
 	if c.Verbose {
 		log.Printf("%s Websocket: %s. (url: %s).\n", c.GetName(), common.IsEnabled(c.Websocket.IsEnabled()), coinutWebsocketURL)
-		log.Printf("%s polling delay: %ds.\n", c.GetName(), c.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", c.GetName(), len(c.EnabledPairs), c.EnabledPairs)
 	}
 

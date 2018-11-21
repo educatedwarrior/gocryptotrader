@@ -5,13 +5,60 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets current default settings
+func (a *ANX) SetDefaults() {
+	a.Name = "ANX"
+	a.Enabled = false
+	a.TakerFee = 0.02
+	a.MakerFee = 0.01
+	a.Verbose = false
+	a.RequestCurrencyPairFormat.Delimiter = ""
+	a.RequestCurrencyPairFormat.Uppercase = true
+	a.RequestCurrencyPairFormat.Index = ""
+	a.ConfigCurrencyPairFormat.Delimiter = "_"
+	a.ConfigCurrencyPairFormat.Uppercase = true
+	a.ConfigCurrencyPairFormat.Index = ""
+	a.APIWithdrawPermissions = exchange.WithdrawCryptoWithEmail | exchange.AutoWithdrawCryptoWithSetup |
+		exchange.WithdrawCryptoWith2FA | exchange.WithdrawFiatViaWebsiteOnly
+	a.AssetTypes = []string{ticker.Spot}
+	a.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	a.Requester = request.New(a.Name,
+		request.NewRateLimit(time.Second, anxAuthRate),
+		request.NewRateLimit(time.Second, anxUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	a.API.Endpoints.URLDefault = anxAPIURL
+	a.API.Endpoints.URL = a.API.Endpoints.URLDefault
+}
+
+//Setup is run on startup to setup exchange with config values
+func (a *ANX) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		a.SetEnabled(false)
+	} else {
+		a.SetupDefaults(exch)
+	}
+}
 
 // Start starts the ANX go routine
 func (a *ANX) Start(wg *sync.WaitGroup) {
@@ -25,7 +72,6 @@ func (a *ANX) Start(wg *sync.WaitGroup) {
 // Run implements the ANX wrapper
 func (a *ANX) Run() {
 	if a.Verbose {
-		log.Printf("%s polling delay: %ds.\n", a.GetName(), a.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", a.GetName(), len(a.EnabledPairs), a.EnabledPairs)
 	}
 

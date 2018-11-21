@@ -27,9 +27,9 @@ func TestSetup(t *testing.T) {
 	if err != nil {
 		t.Error("Test Failed - WEX init error")
 	}
-	conf.APIKey = apiKey
-	conf.APISecret = apiSecret
-	conf.AuthenticatedAPISupport = true
+	conf.API.Credentials.Key = apiKey
+	conf.API.Credentials.Secret = apiSecret
+	conf.API.AuthenticatedSupport = true
 
 	w.Setup(conf)
 }

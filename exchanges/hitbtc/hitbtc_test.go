@@ -29,9 +29,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - HitBTC Setup() init error")
 	}
 
-	hitbtcConfig.AuthenticatedAPISupport = true
-	hitbtcConfig.APIKey = apiKey
-	hitbtcConfig.APISecret = apiSecret
+	hitbtcConfig.API.AuthenticatedSupport = true
+	hitbtcConfig.API.Credentials.Key = apiKey
+	hitbtcConfig.API.Credentials.Secret = apiSecret
 
 	h.Setup(hitbtcConfig)
 }

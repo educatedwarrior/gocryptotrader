@@ -14,8 +14,12 @@ import (
 
 func TestSupportsRESTTickerBatchUpdates(t *testing.T) {
 	b := Base{
-		Name:                       "RAWR",
-		SupportsRESTTickerBatching: true,
+		Name: "RAWR",
+		Features: Features{
+			Supports: FeaturesSupported{
+				RESTTickerBatching: true,
+			},
+		},
 	}
 
 	if !b.SupportsRESTTickerBatchUpdates() {
@@ -102,17 +106,21 @@ func TestSetAutoPairDefaults(t *testing.T) {
 	}
 
 	b := Base{
-		Name:                     "TESTNAME",
-		SupportsAutoPairUpdating: true,
+		Name: "TESTNAME",
+		Features: Features{
+			Supports: FeaturesSupported{
+				AutoPairUpdates: true,
+			},
+		},
 	}
 
-	err = b.SetAutoPairDefaults()
+	err = b.SetFeatureDefaults()
 	if err == nil {
 		t.Fatal("Test failed. TestSetAutoPairDefaults returned nil error for a non-existent exchange")
 	}
 
 	b.Name = "Bitstamp"
-	err = b.SetAutoPairDefaults()
+	err = b.SetFeatureDefaults()
 	if err != nil {
 		t.Fatalf("Test failed. TestSetAutoPairDefaults. Error %s", err)
 	}
@@ -122,7 +130,7 @@ func TestSetAutoPairDefaults(t *testing.T) {
 		t.Fatalf("Test failed. TestSetAutoPairDefaults load config failed. Error %s", err)
 	}
 
-	if !exch.SupportsAutoPairUpdates {
+	if !exch.Features.Supports.AutoPairUpdates {
 		t.Fatalf("Test failed. TestSetAutoPairDefaults Incorrect value")
 	}
 
@@ -130,7 +138,7 @@ func TestSetAutoPairDefaults(t *testing.T) {
 		t.Fatalf("Test failed. TestSetAutoPairDefaults Incorrect value")
 	}
 
-	exch.SupportsAutoPairUpdates = false
+	exch.Features.Supports.AutoPairUpdates = false
 	err = cfg.UpdateExchangeConfig(exch)
 	if err != nil {
 		t.Fatalf("Test failed. TestSetAutoPairDefaults update config failed. Error %s", err)
@@ -141,11 +149,11 @@ func TestSetAutoPairDefaults(t *testing.T) {
 		t.Fatalf("Test failed. TestSetAutoPairDefaults load config failed. Error %s", err)
 	}
 
-	if exch.SupportsAutoPairUpdates != false {
+	if exch.Features.Supports.AutoPairUpdates != false {
 		t.Fatal("Test failed. TestSetAutoPairDefaults Incorrect value")
 	}
 
-	err = b.SetAutoPairDefaults()
+	err = b.SetFeatureDefaults()
 	if err != nil {
 		t.Fatalf("Test failed. TestSetAutoPairDefaults. Error %s", err)
 	}
@@ -155,25 +163,28 @@ func TestSetAutoPairDefaults(t *testing.T) {
 		t.Fatalf("Test failed. TestSetAutoPairDefaults load config failed. Error %s", err)
 	}
 
-	if exch.SupportsAutoPairUpdates == false {
+	if exch.Features.Supports.AutoPairUpdates == false {
 		t.Fatal("Test failed. TestSetAutoPairDefaults Incorrect value")
 	}
 
-	b.SupportsAutoPairUpdating = false
-	err = b.SetAutoPairDefaults()
+	b.Name = "Bitflyer"
+	err = b.SetFeatureDefaults()
 	if err != nil {
 		t.Fatalf("Test failed. TestSetAutoPairDefaults. Error %s", err)
 	}
 
-	if b.PairsLastUpdated == 0 {
+	if !exch.Features.Supports.AutoPairUpdates {
+		t.Fatal("Test failed. TestSetAutoPairDefaults Incorrect value")
+	}
+
+	if b.PairsLastUpdated != 0 {
 		t.Fatal("Test failed. TestSetAutoPairDefaults Incorrect value")
 	}
 }
 
 func TestSupportsAutoPairUpdates(t *testing.T) {
 	b := Base{
-		Name:                     "TESTNAME",
-		SupportsAutoPairUpdating: false,
+		Name: "TESTNAME",
 	}
 
 	if b.SupportsAutoPairUpdates() {
@@ -366,10 +377,7 @@ func TestSetCurrencyPairFormat(t *testing.T) {
 }
 
 func TestGetAuthenticatedAPISupport(t *testing.T) {
-	base := Base{
-		AuthenticatedAPISupport: false,
-	}
-
+	var base Base
 	if base.GetAuthenticatedAPISupport() {
 		t.Fatal("Test failed. TestGetAuthenticatedAPISupport returned true when it should of been false.")
 	}
@@ -662,19 +670,18 @@ func TestIsEnabled(t *testing.T) {
 
 func TestSetAPIKeys(t *testing.T) {
 	SetAPIKeys := Base{
-		Name:                    "TESTNAME",
-		Enabled:                 false,
-		AuthenticatedAPISupport: false,
+		Name:    "TESTNAME",
+		Enabled: false,
 	}
 
 	SetAPIKeys.SetAPIKeys("RocketMan", "Digereedoo", "007", false)
-	if SetAPIKeys.APIKey != "" && SetAPIKeys.APISecret != "" && SetAPIKeys.ClientID != "" {
+	if SetAPIKeys.API.Credentials.Key != "" && SetAPIKeys.API.Credentials.Secret != "" && SetAPIKeys.API.Credentials.ClientID != "" {
 		t.Error("Test Failed - SetAPIKeys() set values without authenticated API support enabled")
 	}
 
-	SetAPIKeys.AuthenticatedAPISupport = true
+	SetAPIKeys.API.AuthenticatedSupport = true
 	SetAPIKeys.SetAPIKeys("RocketMan", "Digereedoo", "007", false)
-	if SetAPIKeys.APIKey != "RocketMan" && SetAPIKeys.APISecret != "Digereedoo" && SetAPIKeys.ClientID != "007" {
+	if SetAPIKeys.API.Credentials.Key != "RocketMan" && SetAPIKeys.API.Credentials.Secret != "Digereedoo" && SetAPIKeys.API.Credentials.ClientID != "007" {
 		t.Error("Test Failed - Exchange SetAPIKeys() did not set correct values")
 	}
 	SetAPIKeys.SetAPIKeys("RocketMan", "Digereedoo", "007", true)
@@ -817,11 +824,11 @@ func TestAPIURL(t *testing.T) {
 		t.Error("test failed - setting zero value config")
 	}
 
-	test.APIURL = testURL
-	test.APIURLSecondary = testURLSecondary
+	test.API.Endpoints.URL = testURL
+	test.API.Endpoints.URLSecondary = testURLSecondary
 
-	tester.APIUrlDefault = testURLDefault
-	tester.APIUrlSecondaryDefault = testURLSecondaryDefault
+	tester.API.Endpoints.URLDefault = testURLDefault
+	tester.API.Endpoints.URLSecondaryDefault = testURLSecondaryDefault
 
 	err = tester.SetAPIURL(test)
 	if err != nil {

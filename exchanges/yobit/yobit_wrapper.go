@@ -4,13 +4,64 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	exchange "github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets current default value for Yobit
+func (y *Yobit) SetDefaults() {
+	y.Name = "Yobit"
+	y.Enabled = true
+	y.Fee = 0.2
+	y.Verbose = false
+	y.API.AuthenticatedSupport = true
+	y.Ticker = make(map[string]Ticker)
+	y.APIWithdrawPermissions = exchange.AutoWithdrawCryptoWithAPIPermission | exchange.WithdrawFiatViaWebsiteOnly
+	y.RequestCurrencyPairFormat.Delimiter = "_"
+	y.RequestCurrencyPairFormat.Uppercase = false
+	y.RequestCurrencyPairFormat.Separator = "-"
+	y.ConfigCurrencyPairFormat.Delimiter = "_"
+	y.ConfigCurrencyPairFormat.Uppercase = true
+	y.AssetTypes = []string{ticker.Spot}
+	y.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    false,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: false,
+		},
+	}
+	y.Requester = request.New(y.Name,
+		request.NewRateLimit(time.Second, yobitAuthRate),
+		request.NewRateLimit(time.Second, yobitUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	y.API.Endpoints.URLDefault = apiPublicURL
+	y.API.Endpoints.URL = y.API.Endpoints.URLDefault
+	y.API.Endpoints.URLSecondaryDefault = apiPrivateURL
+	y.API.Endpoints.URLSecondary = y.API.Endpoints.URLSecondaryDefault
+}
+
+// Setup sets exchange configuration parameters for Yobit
+func (y *Yobit) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		y.SetEnabled(false)
+	} else {
+		err := y.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the WEX go routine
 func (y *Yobit) Start(wg *sync.WaitGroup) {
@@ -24,7 +75,6 @@ func (y *Yobit) Start(wg *sync.WaitGroup) {
 // Run implements the Yobit wrapper
 func (y *Yobit) Run() {
 	if y.Verbose {
-		log.Printf("%s polling delay: %ds.\n", y.GetName(), y.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", y.GetName(), len(y.EnabledPairs), y.EnabledPairs)
 	}
 }

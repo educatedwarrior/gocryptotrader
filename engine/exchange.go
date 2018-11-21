@@ -220,6 +220,22 @@ func LoadExchange(name string, useWG bool, wg *sync.WaitGroup) error {
 		exchCfg.Verbose = true
 	}
 
+	if Bot.Settings.EnableExchangeWebsocketSupport {
+		if exchCfg.Features != nil {
+			if exchCfg.Features.Supports.Websocket {
+				exchCfg.Features.Enabled.Websocket = true
+			}
+		}
+	}
+
+	if Bot.Settings.EnableExchangeAutoPairUpdates {
+		if exchCfg.Features != nil {
+			if exchCfg.Features.Supports.AutoPairUpdates {
+				exchCfg.Features.Enabled.AutoPairUpdates = true
+			}
+		}
+	}
+
 	if Bot.Settings.ExchangeHTTPUserAgent != "" {
 		exchCfg.HTTPUserAgent = Bot.Settings.ExchangeHTTPUserAgent
 	}
@@ -282,7 +298,7 @@ func SetupExchanges() {
 		log.Printf(
 			"%s: Exchange support: Enabled (Authenticated API support: %s - Verbose mode: %s).\n",
 			exch.Name,
-			common.IsEnabled(exch.AuthenticatedAPISupport),
+			common.IsEnabled(exch.API.AuthenticatedSupport),
 			common.IsEnabled(exch.Verbose),
 		)
 	}

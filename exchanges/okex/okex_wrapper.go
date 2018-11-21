@@ -4,13 +4,69 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	exchange "github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults method assignes the default values for Bittrex
+func (o *OKEX) SetDefaults() {
+	o.SetErrorDefaults()
+	o.SetCheckVarDefaults()
+	o.Name = "OKEX"
+	o.Enabled = false
+	o.Verbose = false
+	o.APIWithdrawPermissions = exchange.AutoWithdrawCrypto
+	o.RequestCurrencyPairFormat.Delimiter = "_"
+	o.RequestCurrencyPairFormat.Uppercase = false
+	o.ConfigCurrencyPairFormat.Delimiter = "_"
+	o.ConfigCurrencyPairFormat.Uppercase = false
+	o.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    false,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          true,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: false,
+		},
+	}
+	o.Requester = request.New(o.Name,
+		request.NewRateLimit(time.Second, okexAuthRate),
+		request.NewRateLimit(time.Second, okexUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	o.API.Endpoints.URLDefault = apiURL
+	o.API.Endpoints.URL = o.API.Endpoints.URLDefault
+	o.AssetTypes = []string{ticker.Spot}
+	o.WebsocketInit()
+}
+
+// Setup method sets current configuration details if enabled
+func (o *OKEX) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		o.SetEnabled(false)
+	} else {
+		err := o.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = o.WebsocketSetup(o.WsConnect,
+			exch.Name,
+			exch.Features.Enabled.Websocket,
+			okexDefaultWebsocketURL,
+			exch.API.Endpoints.WebsocketURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the OKEX go routine
 func (o *OKEX) Start(wg *sync.WaitGroup) {
@@ -25,7 +81,6 @@ func (o *OKEX) Start(wg *sync.WaitGroup) {
 func (o *OKEX) Run() {
 	if o.Verbose {
 		log.Printf("%s Websocket: %s. (url: %s).\n", o.GetName(), common.IsEnabled(o.Websocket.IsEnabled()), o.WebsocketURL)
-		log.Printf("%s polling delay: %ds.\n", o.GetName(), o.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", o.GetName(), len(o.EnabledPairs), o.EnabledPairs)
 	}
 }

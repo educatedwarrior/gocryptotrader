@@ -4,13 +4,58 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	exchange "github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults method assignes the default values for Bittrex
+func (b *Bittrex) SetDefaults() {
+	b.Name = "Bittrex"
+	b.Enabled = false
+	b.Verbose = false
+	b.APIWithdrawPermissions = exchange.AutoWithdrawCryptoWithAPIPermission
+	b.RequestCurrencyPairFormat.Delimiter = "-"
+	b.RequestCurrencyPairFormat.Uppercase = true
+	b.ConfigCurrencyPairFormat.Delimiter = "-"
+	b.ConfigCurrencyPairFormat.Uppercase = true
+	b.AssetTypes = []string{ticker.Spot}
+	b.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	b.Requester = request.New(b.Name,
+		request.NewRateLimit(time.Second, bittrexAuthRate),
+		request.NewRateLimit(time.Second, bittrexUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	b.API.Endpoints.URLDefault = bittrexAPIURL
+	b.API.Endpoints.URL = b.API.Endpoints.URLDefault
+}
+
+// Setup method sets current configuration details if enabled
+func (b *Bittrex) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		b.SetEnabled(false)
+	} else {
+		err := b.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the Bittrex go routine
 func (b *Bittrex) Start(wg *sync.WaitGroup) {
@@ -24,7 +69,6 @@ func (b *Bittrex) Start(wg *sync.WaitGroup) {
 // Run implements the Bittrex wrapper
 func (b *Bittrex) Run() {
 	if b.Verbose {
-		log.Printf("%s polling delay: %ds.\n", b.GetName(), b.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", b.GetName(), len(b.EnabledPairs), b.EnabledPairs)
 	}
 

@@ -30,10 +30,10 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - Gemini Setup() init error")
 	}
 
-	itbitConfig.AuthenticatedAPISupport = true
-	itbitConfig.APIKey = apiKey
-	itbitConfig.APISecret = apiSecret
-	itbitConfig.ClientID = clientID
+	itbitConfig.API.AuthenticatedSupport = true
+	itbitConfig.API.Credentials.Key = apiKey
+	itbitConfig.API.Credentials.Secret = apiSecret
+	itbitConfig.API.Credentials.ClientID = clientID
 
 	i.Setup(itbitConfig)
 }

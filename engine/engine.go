@@ -120,6 +120,11 @@ func ValidateSettings(b *Engine, s *Settings) {
 		request.MaxRequestJobs = b.Settings.MaxHTTPRequestJobsLimit
 	}
 
+	b.Settings.RequestTimeoutRetryAttempts = s.RequestTimeoutRetryAttempts
+	if b.Settings.RequestTimeoutRetryAttempts != request.DefaultTimeoutRetryAttempts && s.RequestTimeoutRetryAttempts > 0 {
+		request.TimeoutRetryAttempts = b.Settings.RequestTimeoutRetryAttempts
+	}
+
 	b.Settings.ExchangeHTTPTimeout = s.ExchangeHTTPTimeout
 	if s.ExchangeHTTPTimeout != time.Duration(0) && s.ExchangeHTTPTimeout > 0 {
 		b.Settings.ExchangeHTTPTimeout = s.ExchangeHTTPTimeout
@@ -167,6 +172,7 @@ func PrintSettings(s Settings) {
 	log.Printf("\t Enable exchange verbose mode: %v", s.EnableExchangeVerbose)
 	log.Printf("\t Enable exchange HTTP rate limiter: %v", s.EnableHTTPRateLimiter)
 	log.Printf("\t Exchange max HTTP request jobs: %v", s.MaxHTTPRequestJobsLimit)
+	log.Printf("\t Exchange HTTP request timeout retry amount: %v", s.RequestTimeoutRetryAttempts)
 	log.Printf("\t Exchange HTTP timeout: %v", s.ExchangeHTTPTimeout)
 	log.Printf("\t Exchange HTTP user agent: %v", s.ExchangeHTTPUserAgent)
 	log.Printf("\t Exchange HTTP proxy: %v\n", s.ExchangeHTTPProxy)
@@ -190,9 +196,12 @@ func (e *Engine) Start() {
 		enabledExchanges = len(e.Config.Exchanges)
 	}
 
-	log.Printf("Available Exchanges: %d. Enabled Exchanges: %d.\n",
+	log.Println()
+	log.Println("EXCHANGE COVERAGE")
+	log.Printf("\t Available Exchanges: %d. Enabled Exchanges: %d.\n",
 		len(e.Config.Exchanges), enabledExchanges)
 
+	log.Println("Setting up exchanges..")
 	SetupExchanges()
 	if len(e.Exchanges) == 0 {
 		log.Fatalf("No exchanges were able to be loaded. Exiting")

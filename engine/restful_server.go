@@ -238,7 +238,9 @@ func GetAllEnabledExchangeAccountInfo() AllEnabledExchangeAccounts {
 	for _, individualBot := range Bot.Exchanges {
 		if individualBot != nil && individualBot.IsEnabled() {
 			if !individualBot.GetAuthenticatedAPISupport() {
-				log.Printf("GetAllEnabledExchangeAccountInfo: Skippping %s due to disabled authenticated API support.", individualBot.GetName())
+				if Bot.Settings.Verbose {
+					log.Printf("GetAllEnabledExchangeAccountInfo: Skippping %s due to disabled authenticated API support.", individualBot.GetName())
+				}
 				continue
 			}
 			individualExchange, err := individualBot.GetExchangeAccountInfo()

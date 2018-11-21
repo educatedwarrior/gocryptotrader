@@ -85,7 +85,7 @@ func TestGetServerTime(t *testing.T) {
 
 func TestAuthRequests(t *testing.T) {
 
-	if c.APIKey != "" && c.APISecret != "" && c.ClientID != "" {
+	if c.API.Credentials.Key != "" && c.API.Credentials.Secret != "" && c.API.Credentials.ClientID != "" {
 
 		_, err := c.GetAccounts()
 		if err == nil {

@@ -21,9 +21,9 @@ func TestDefault(t *testing.T) {
 }
 
 func TestSetup(t *testing.T) {
-	e.AuthenticatedAPISupport = true
-	e.APIKey = APIKey
-	e.APISecret = APISecret
+	e.API.AuthenticatedSupport = true
+	e.API.Credentials.Key = APIKey
+	e.API.Credentials.Secret = APISecret
 }
 
 func TestGetTrades(t *testing.T) {

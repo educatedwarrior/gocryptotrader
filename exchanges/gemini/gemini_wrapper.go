@@ -5,12 +5,61 @@ import (
 	"log"
 	"net/url"
 	"sync"
+	"time"
 
+	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets package defaults for gemini exchange
+func (g *Gemini) SetDefaults() {
+	g.Name = "Gemini"
+	g.Enabled = false
+	g.Verbose = false
+	g.APIWithdrawPermissions = exchange.AutoWithdrawCryptoWithAPIPermission | exchange.AutoWithdrawCryptoWithSetup | exchange.WithdrawFiatViaWebsiteOnly
+	g.RequestCurrencyPairFormat.Delimiter = ""
+	g.RequestCurrencyPairFormat.Uppercase = true
+	g.ConfigCurrencyPairFormat.Delimiter = ""
+	g.ConfigCurrencyPairFormat.Uppercase = true
+	g.AssetTypes = []string{ticker.Spot}
+	g.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	g.Requester = request.New(g.Name,
+		request.NewRateLimit(time.Minute, geminiAuthRate),
+		request.NewRateLimit(time.Minute, geminiUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	g.API.Endpoints.URLDefault = geminiAPIURL
+	g.API.Endpoints.URL = g.API.Endpoints.URLDefault
+}
+
+// Setup sets exchange configuration parameters
+func (g *Gemini) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		g.SetEnabled(false)
+	} else {
+		err := g.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if exch.UseSandbox {
+			g.API.Endpoints.URL = geminiSandboxAPIURL
+		}
+	}
+}
 
 // Start starts the Gemini go routine
 func (g *Gemini) Start(wg *sync.WaitGroup) {
@@ -24,7 +73,6 @@ func (g *Gemini) Start(wg *sync.WaitGroup) {
 // Run implements the Gemini wrapper
 func (g *Gemini) Run() {
 	if g.Verbose {
-		log.Printf("%s polling delay: %ds.\n", g.GetName(), g.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", g.GetName(), len(g.EnabledPairs), g.EnabledPairs)
 	}
 

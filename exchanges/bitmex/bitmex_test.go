@@ -30,9 +30,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - Bitmex Setup() init error")
 	}
 
-	bitmexConfig.AuthenticatedAPISupport = true
-	bitmexConfig.APIKey = testAPIKey
-	bitmexConfig.APISecret = testAPISecret
+	bitmexConfig.API.AuthenticatedSupport = true
+	bitmexConfig.API.Credentials.Key = testAPIKey
+	bitmexConfig.API.Credentials.Secret = testAPISecret
 
 	b.Setup(bitmexConfig)
 }

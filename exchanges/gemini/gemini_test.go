@@ -54,7 +54,7 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - Gemini Setup() init error")
 	}
 
-	geminiConfig.AuthenticatedAPISupport = true
+	geminiConfig.API.AuthenticatedSupport = true
 
 	Session[1].Setup(geminiConfig)
 	Session[2].Setup(geminiConfig)

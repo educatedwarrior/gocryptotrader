@@ -22,22 +22,27 @@ var h HUOBIHADAX
 // getDefaultConfig returns a default huobi config
 func getDefaultConfig() config.ExchangeConfig {
 	return config.ExchangeConfig{
-		Name:                    "huobihadax",
-		Enabled:                 true,
-		Verbose:                 true,
-		Websocket:               false,
-		UseSandbox:              false,
-		RESTPollingDelay:        10,
-		HTTPTimeout:             15000000000,
-		AuthenticatedAPISupport: true,
-		APIKey:                  "",
-		APISecret:               "",
-		ClientID:                "",
-		AvailablePairs:          "BTC-USDT,BCH-USDT",
-		EnabledPairs:            "BTC-USDT",
-		BaseCurrencies:          "USD",
-		AssetTypes:              "SPOT",
-		SupportsAutoPairUpdates: false,
+		Name:    "huobihadax",
+		Enabled: true,
+		Verbose: true,
+		Features: &config.FeaturesConfig{
+			Supports: config.FeaturesSupportedConfig{
+				AutoPairUpdates: false,
+				Websocket:       false,
+			},
+			Enabled: config.FeaturesEnabledConfig{
+				AutoPairUpdates: false,
+				Websocket:       false,
+			},
+		},
+		API: config.APIConfig{
+			AuthenticatedSupport: false,
+		},
+		HTTPTimeout:    15000000000,
+		AvailablePairs: "BTC-USDT,BCH-USDT",
+		EnabledPairs:   "BTC-USDT",
+		BaseCurrencies: "USD",
+		AssetTypes:     "SPOT",
 		ConfigCurrencyPairFormat: &config.CurrencyPairFormatConfig{
 			Uppercase: true,
 			Delimiter: "-",
@@ -60,9 +65,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - HuobiHadax Setup() init error")
 	}
 
-	hadaxConfig.AuthenticatedAPISupport = true
-	hadaxConfig.APIKey = apiKey
-	hadaxConfig.APISecret = apiSecret
+	hadaxConfig.API.AuthenticatedSupport = true
+	hadaxConfig.API.Credentials.Key = apiKey
+	hadaxConfig.API.Credentials.Secret = apiSecret
 
 	h.Setup(hadaxConfig)
 }
@@ -154,7 +159,7 @@ func TestGetTimestamp(t *testing.T) {
 func TestGetAccounts(t *testing.T) {
 	t.Parallel()
 
-	if h.APIKey == "" || h.APISecret == "" || h.APIAuthPEMKey == "" {
+	if h.API.Credentials.Key == "" || h.API.Credentials.Secret == "" || h.API.Credentials.PEMKey == "" {
 		t.Skip()
 	}
 
@@ -167,7 +172,7 @@ func TestGetAccounts(t *testing.T) {
 func TestGetAccountBalance(t *testing.T) {
 	t.Parallel()
 
-	if h.APIKey == "" || h.APISecret == "" || h.APIAuthPEMKey == "" {
+	if h.API.Credentials.Key == "" || h.API.Credentials.Secret == "" || h.API.Credentials.PEMKey == "" {
 		t.Skip()
 	}
 
@@ -186,7 +191,7 @@ func TestGetAccountBalance(t *testing.T) {
 func TestSpotNewOrder(t *testing.T) {
 	t.Parallel()
 
-	if h.APIKey == "" || h.APISecret == "" || h.APIAuthPEMKey == "" {
+	if h.API.Credentials.Key == "" || h.API.Credentials.Secret == "" || h.API.Credentials.PEMKey == "" {
 		t.Skip()
 	}
 
@@ -209,7 +214,7 @@ func TestSpotNewOrder(t *testing.T) {
 func TestCancelOrder(t *testing.T) {
 	t.Parallel()
 
-	if h.APIKey == "" || h.APISecret == "" || h.APIAuthPEMKey == "" {
+	if h.API.Credentials.Key == "" || h.API.Credentials.Secret == "" || h.API.Credentials.PEMKey == "" {
 		t.Skip()
 	}
 
@@ -222,7 +227,7 @@ func TestCancelOrder(t *testing.T) {
 func TestGetOrder(t *testing.T) {
 	t.Parallel()
 
-	if h.APIKey == "" || h.APISecret == "" || h.APIAuthPEMKey == "" {
+	if h.API.Credentials.Key == "" || h.API.Credentials.Secret == "" || h.API.Credentials.PEMKey == "" {
 		t.Skip()
 	}
 
@@ -235,7 +240,7 @@ func TestGetOrder(t *testing.T) {
 func TestGetMarginLoanOrders(t *testing.T) {
 	t.Parallel()
 
-	if h.APIKey == "" || h.APISecret == "" || h.APIAuthPEMKey == "" {
+	if h.API.Credentials.Key == "" || h.API.Credentials.Secret == "" || h.API.Credentials.PEMKey == "" {
 		t.Skip()
 	}
 
@@ -248,7 +253,7 @@ func TestGetMarginLoanOrders(t *testing.T) {
 func TestGetMarginAccountBalance(t *testing.T) {
 	t.Parallel()
 
-	if h.APIKey == "" || h.APISecret == "" || h.APIAuthPEMKey == "" {
+	if h.API.Credentials.Key == "" || h.API.Credentials.Secret == "" || h.API.Credentials.PEMKey == "" {
 		t.Skip()
 	}
 
@@ -261,7 +266,7 @@ func TestGetMarginAccountBalance(t *testing.T) {
 func TestCancelWithdraw(t *testing.T) {
 	t.Parallel()
 
-	if h.APIKey == "" || h.APISecret == "" || h.APIAuthPEMKey == "" {
+	if h.API.Credentials.Key == "" || h.API.Credentials.Secret == "" || h.API.Credentials.PEMKey == "" {
 		t.Skip()
 	}
 

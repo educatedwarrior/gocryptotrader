@@ -4,14 +4,73 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
 	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets default values for the exchange
+func (h *HUOBI) SetDefaults() {
+	h.Name = "Huobi"
+	h.Enabled = true
+	h.Fee = 0
+	h.Verbose = false
+	h.APIWithdrawPermissions = exchange.AutoWithdrawCryptoWithSetup
+	h.RequestCurrencyPairFormat.Delimiter = ""
+	h.RequestCurrencyPairFormat.Uppercase = false
+	h.ConfigCurrencyPairFormat.Delimiter = "-"
+	h.ConfigCurrencyPairFormat.Uppercase = true
+	h.AssetTypes = []string{ticker.Spot}
+	h.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: false,
+			REST:               true,
+			Websocket:          true,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+
+	h.Requester = request.New(h.Name,
+		request.NewRateLimit(time.Second*10, huobiAuthRate),
+		request.NewRateLimit(time.Second*10, huobiUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	h.API.Endpoints.URLDefault = huobiAPIURL
+	h.API.Endpoints.URL = h.API.Endpoints.URLDefault
+	h.WebsocketInit()
+}
+
+// Setup sets user configuration
+func (h *HUOBI) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		h.SetEnabled(false)
+	} else {
+		err := h.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		h.API.PEMKeySupport = exch.API.PEMKeySupport
+		h.API.Credentials.PEMKey = exch.API.Credentials.PEMKey
+
+		err = h.WebsocketSetup(h.WsConnect,
+			exch.Name,
+			exch.Features.Enabled.Websocket,
+			huobiSocketIOAddress,
+			exch.API.Endpoints.WebsocketURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the HUOBI go routine
 func (h *HUOBI) Start(wg *sync.WaitGroup) {
@@ -26,7 +85,6 @@ func (h *HUOBI) Start(wg *sync.WaitGroup) {
 func (h *HUOBI) Run() {
 	if h.Verbose {
 		log.Printf("%s Websocket: %s (url: %s).\n", h.GetName(), common.IsEnabled(h.Websocket.IsEnabled()), huobiSocketIOAddress)
-		log.Printf("%s polling delay: %ds.\n", h.GetName(), h.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", h.GetName(), len(h.EnabledPairs), h.EnabledPairs)
 	}
 

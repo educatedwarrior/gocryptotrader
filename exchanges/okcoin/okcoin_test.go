@@ -29,9 +29,9 @@ func TestSetup(t *testing.T) {
 		t.Error("Test Failed - OKCoin Setup() init error")
 	}
 
-	okcoinConfig.AuthenticatedAPISupport = true
-	okcoinConfig.APIKey = apiKey
-	okcoinConfig.APISecret = apiSecret
+	okcoinConfig.API.AuthenticatedSupport = true
+	okcoinConfig.API.Credentials.Key = apiKey
+	okcoinConfig.API.Credentials.Secret = apiSecret
 
 	o.Setup(okcoinConfig)
 }

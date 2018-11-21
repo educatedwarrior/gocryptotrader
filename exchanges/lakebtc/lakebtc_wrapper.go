@@ -5,13 +5,60 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	"github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets LakeBTC defaults
+func (l *LakeBTC) SetDefaults() {
+	l.Name = "LakeBTC"
+	l.Enabled = false
+	l.TakerFee = 0.2
+	l.MakerFee = 0.15
+	l.Verbose = false
+	l.APIWithdrawPermissions = exchange.AutoWithdrawCrypto | exchange.WithdrawFiatViaWebsiteOnly
+	l.RequestCurrencyPairFormat.Delimiter = ""
+	l.RequestCurrencyPairFormat.Uppercase = true
+	l.ConfigCurrencyPairFormat.Delimiter = ""
+	l.ConfigCurrencyPairFormat.Uppercase = true
+	l.AssetTypes = []string{ticker.Spot}
+	l.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	l.Requester = request.New(l.Name,
+		request.NewRateLimit(time.Second, lakeBTCAuthRate),
+		request.NewRateLimit(time.Second, lakeBTCUnauth),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	l.API.Endpoints.URLDefault = lakeBTCAPIURL
+	l.API.Endpoints.URL = l.API.Endpoints.URLDefault
+}
+
+// Setup sets exchange configuration profile
+func (l *LakeBTC) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		l.SetEnabled(false)
+	} else {
+		err := l.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the LakeBTC go routine
 func (l *LakeBTC) Start(wg *sync.WaitGroup) {
@@ -25,7 +72,6 @@ func (l *LakeBTC) Start(wg *sync.WaitGroup) {
 // Run implements the LakeBTC wrapper
 func (l *LakeBTC) Run() {
 	if l.Verbose {
-		log.Printf("%s polling delay: %ds.\n", l.GetName(), l.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", l.GetName(), len(l.EnabledPairs), l.EnabledPairs)
 	}
 

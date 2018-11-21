@@ -5,13 +5,59 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/thrasher-/gocryptotrader/common"
+	"github.com/thrasher-/gocryptotrader/config"
 	"github.com/thrasher-/gocryptotrader/currency/pair"
 	exchange "github.com/thrasher-/gocryptotrader/exchanges"
 	"github.com/thrasher-/gocryptotrader/exchanges/orderbook"
+	"github.com/thrasher-/gocryptotrader/exchanges/request"
 	"github.com/thrasher-/gocryptotrader/exchanges/ticker"
 )
+
+// SetDefaults sets the basic defaults for exmo
+func (e *EXMO) SetDefaults() {
+	e.Name = "EXMO"
+	e.Enabled = false
+	e.Verbose = false
+	e.APIWithdrawPermissions = exchange.AutoWithdrawCryptoWithSetup
+	e.RequestCurrencyPairFormat.Delimiter = "_"
+	e.RequestCurrencyPairFormat.Uppercase = true
+	e.RequestCurrencyPairFormat.Separator = ","
+	e.ConfigCurrencyPairFormat.Delimiter = "_"
+	e.ConfigCurrencyPairFormat.Uppercase = true
+	e.AssetTypes = []string{ticker.Spot}
+	e.Features = exchange.Features{
+		Supports: exchange.FeaturesSupported{
+			AutoPairUpdates:    true,
+			RESTTickerBatching: true,
+			REST:               true,
+			Websocket:          false,
+		},
+		Enabled: exchange.FeaturesEnabled{
+			AutoPairUpdates: true,
+		},
+	}
+	e.Requester = request.New(e.Name,
+		request.NewRateLimit(time.Minute, exmoAuthRate),
+		request.NewRateLimit(time.Minute, exmoUnauthRate),
+		common.NewHTTPClientWithTimeout(exchange.DefaultHTTPTimeout))
+	e.API.Endpoints.URLDefault = exmoAPIURL
+	e.API.Endpoints.URL = e.API.Endpoints.URLDefault
+}
+
+// Setup takes in the supplied exchange configuration details and sets params
+func (e *EXMO) Setup(exch config.ExchangeConfig) {
+	if !exch.Enabled {
+		e.SetEnabled(false)
+	} else {
+		err := e.SetupDefaults(exch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
 // Start starts the EXMO go routine
 func (e *EXMO) Start(wg *sync.WaitGroup) {
@@ -25,7 +71,6 @@ func (e *EXMO) Start(wg *sync.WaitGroup) {
 // Run implements the EXMO wrapper
 func (e *EXMO) Run() {
 	if e.Verbose {
-		log.Printf("%s polling delay: %ds.\n", e.GetName(), e.RESTPollingDelay)
 		log.Printf("%s %d currencies enabled: %s.\n", e.GetName(), len(e.EnabledPairs), e.EnabledPairs)
 	}
 
