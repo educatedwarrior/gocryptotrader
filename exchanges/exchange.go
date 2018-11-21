@@ -84,11 +84,11 @@ type FeeBuilder struct {
 }
 
 type OrderCancellation struct {
-	AccountID string
-	OrderID string
-	CurrencyPair CurrencyPair
+	AccountID     string
+	OrderID       string
+	CurrencyPair  pair.CurrencyPair
 	WalletAddress string
-	Side OrderSide
+	Side          OrderSide
 }
 
 // Definitions for each type of withdrawal method for a given exchange
@@ -256,7 +256,7 @@ type IBotExchange interface {
 	GetExchangeFundTransferHistory() ([]FundHistory, error)
 	SubmitExchangeOrder(p pair.CurrencyPair, side OrderSide, orderType OrderType, amount, price float64, clientID string) (int64, error)
 	ModifyExchangeOrder(orderID int64, modify ModifyOrder) (int64, error)
-	CancelExchangeOrder(accountId, orderID, symbol string, ) error
+	CancelExchangeOrder(accountId, orderID, symbol string) error
 	CancelAllExchangeOrders() error
 	GetExchangeOrderInfo(orderID int64) (OrderDetail, error)
 	GetExchangeDepositAddress(cryptocurrency pair.CurrencyItem) (string, error)
