@@ -422,9 +422,9 @@ func (a *Alphapoint) ModifyOrder(symbol string, OrderID, action int64) (int64, e
 // CancelOrder cancels an order that has not been executed.
 // symbol - Instrument code (ex: “BTCUSD”)
 // OrderId - Order id (ex: 1000)
-func (a *Alphapoint) CancelOrder(symbol string, OrderID int64) (int64, error) {
+func (a *Alphapoint) CancelOrder(OrderID string) (int64, error) {
 	request := make(map[string]interface{})
-	request["ins"] = symbol
+	request["OrderId"] = OrderID
 	request["serverOrderId"] = OrderID
 	response := Response{}
 
