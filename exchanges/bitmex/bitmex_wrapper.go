@@ -155,8 +155,8 @@ func (b *Bitmex) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder)
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (b *Bitmex) CancelExchangeOrder(orderID string) error {
-	return errors.New("not yet implemented")
+func (b *Bitmex) CancelExchangeOrder(order exchange.OrderCancellation) (bool, error) {
+	return false, errors.New("not yet implemented")
 }
 
 // CancelAllExchangeOrders cancels all orders associated with a currency pair

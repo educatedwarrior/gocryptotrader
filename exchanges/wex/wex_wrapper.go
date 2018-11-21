@@ -169,8 +169,8 @@ func (w *WEX) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder) (i
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (w *WEX) CancelExchangeOrder(orderID string) error {
-	return errors.New("not yet implemented")
+func (w *WEX) CancelExchangeOrder(order exchange.OrderCancellation) (bool, error) {
+	return false, errors.New("not yet implemented")
 }
 
 // CancelAllExchangeOrders cancels all orders associated with a currency pair

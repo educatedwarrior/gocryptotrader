@@ -164,12 +164,12 @@ func (b *BTCMarkets) ModifyExchangeOrder(orderID int64, action exchange.ModifyOr
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (b *BTCMarkets) CancelExchangeOrder(orderID string) error {
-	_, err := b.CancelOrder([]string{orderID})
+func (b *BTCMarkets) CancelExchangeOrder(order exchange.OrderCancellation) (bool, error) {
+	_, err := b.CancelOrder([]string{order.OrderID})
 	if err != nil {
-		return err
+		return false, err
 	}
-	return nil
+	return false, errors.New("not yet implemented")
 }
 
 // CancelAllExchangeOrders cancels all orders associated with a currency pair

@@ -118,10 +118,12 @@ func (a *Alphapoint) ModifyExchangeOrder(orderID int64, action exchange.ModifyOr
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (a *Alphapoint) CancelExchangeOrder(orderID string) error {
-	response, err := a.CancelOrder(orderID)
-
-	return err
+func (a *Alphapoint) CancelExchangeOrder(order exchange.OrderCancellation) (bool, error) {
+	_, err := a.CancelOrder(order.OrderID)
+	if err != nil {
+		return false, err
+	}
+	return true, err
 }
 
 // CancelAllExchangeOrders cancels all orders associated with a currency pair

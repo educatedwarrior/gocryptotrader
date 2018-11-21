@@ -151,8 +151,8 @@ func (y *Yobit) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder) 
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (y *Yobit) CancelExchangeOrder(orderID string) error {
-	return errors.New("not yet implemented")
+func (y *Yobit) CancelExchangeOrder(order exchange.OrderCancellation) (bool, error) {
+	return false, errors.New("not yet implemented")
 }
 
 // CancelAllExchangeOrders cancels all orders associated with a currency pair

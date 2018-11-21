@@ -152,9 +152,9 @@ func (b *Binance) ModifyExchangeOrder(orderID int64, action exchange.ModifyOrder
 }
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
-func (b *Binance) CancelExchangeOrder(orderID string) error {
+func (b *Binance) CancelExchangeOrder(order exchange.OrderCancellation) (bool, error) {
 	//b.CancelOrder()
-	return errors.New("not yet implemented")
+	return false, errors.New("not yet implemented")
 }
 
 // CancelAllExchangeOrders cancels all orders associated with a currency pair
