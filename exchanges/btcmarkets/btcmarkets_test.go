@@ -88,7 +88,7 @@ func TestNewOrder(t *testing.T) {
 
 func TestCancelOrder(t *testing.T) {
 	t.Parallel()
-	_, err := b.CancelOrder([]int64{1337})
+	_, err := b.CancelOrder(nil)
 	if err == nil {
 		t.Error("Test failed - CancelOrder() error", err)
 	}
@@ -168,7 +168,8 @@ func TestModifyExchangeOrder(t *testing.T) {
 }
 
 func TestCancelExchangeOrder(t *testing.T) {
-	err := b.CancelExchangeOrder(1337)
+	var empty exchange.OrderCancellation
+	_, err := b.CancelExchangeOrder(empty)
 	if err == nil {
 		t.Error("Test failed - CancelExchangeOrder() error", err)
 	}
