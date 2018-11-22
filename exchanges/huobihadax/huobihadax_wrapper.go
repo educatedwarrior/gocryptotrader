@@ -3,6 +3,7 @@ package huobihadax
 import (
 	"errors"
 	"log"
+	"strconv"
 	"sync"
 
 	"github.com/thrasher-/gocryptotrader/common"
@@ -147,7 +148,19 @@ func (h *HUOBIHADAX) ModifyExchangeOrder(orderID int64, action exchange.ModifyOr
 
 // CancelExchangeOrder cancels an order by its corresponding ID number
 func (h *HUOBIHADAX) CancelExchangeOrder(order exchange.OrderCancellation) (bool, error) {
-	return false, errors.New("not yet implemented")
+	orderIDInt, err := strconv.ParseInt(order.OrderID, 10, 64)
+
+	if err != nil {
+		return false, err
+	}
+
+	_, err = h.CancelOrder(orderIDInt)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, err
 }
 
 // CancelAllExchangeOrders cancels all orders associated with a currency pair
